@@ -1,7 +1,5 @@
 import React, { useEffect,useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import record from '../assets/record.jpg'
-import download from "../assets/download.png"
 import { saveAs } from "file-saver";
 import axios from 'axios';
 
@@ -12,19 +10,34 @@ const Details = () => {
 
     const data = location.state?.data;
     const img = data.imageURL;
+    const title = data.title;
     console.log(data);
     const handleClick = () => {
         let url = { img }
         saveAs(url, "report");
     }
 
+    const handlePasswordChange = (e) => {
+        setPassword(e.target.value);
+    }
+
     const downloadReport = async (e) => {
         e.preventDefault();
         try {
             console.log("Calling");
-            const response = await axios.post('http://127.0.0.1:8000/download', {password: password, cid: img})
+            const data = {
+                "password": password,
+                "cid": img
+            }
+            console.log(data);
+            await axios.post('http://127.0.0.1:8000/download', data, { responseType: 'blob' })
             .then((response) => {
-                console.log("Report Downloaded");
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `${title}.pdf`); // Set the desired filename
+                document.body.appendChild(link);
+                link.click();
             }).catch((err) => {
                 console.log(err);
             });
@@ -54,12 +67,11 @@ const Details = () => {
                             <p className='text-justify text-lg mt-6 tracking-wider font-light'>Description: {data.description}</p>
                             <p className='text-justify mt-6 tracking-wider text-lg'>Recordtime: {data.timestamp}</p>
                             {/* form */}
-                            <form action="" className='flex flex-col justify-center' onSubmit={downloadReport}>
-
+                            <form className='flex flex-col justify-center' onSubmit={downloadReport}>
                                 <div className='mb-4'>
                                 <label className='text-white ml-3'>Password</label>
                                 <input
-                                    onChange={e => setPassword(e.target.password)}
+                                    onChange={e => handlePasswordChange(e)}
                                     type="text" name='password' placeholder='Enter Password for decryption' className='w-full p-2 rounded-lg mt-2 outline-none text-lg' required />
                                 </div>
 
